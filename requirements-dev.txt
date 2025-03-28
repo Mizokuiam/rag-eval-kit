@@ -1,0 +1,14 @@
+# Linters & Formatters
+black>=23.0.0,<25.0.0
+flake8>=6.0.0,<8.0.0
+isort>=5.10.0,<6.0.0
+
+# Type Checking (Optional but recommended)
+# mypy>=1.0.0,<2.0.0
+
+# Testing (Add if tests are written)
+# pytest>=7.0.0,<9.0.0
+# pytest-cov>=4.0.0,<6.0.0
+
+# For pre-commit hooks (Optional)
+# pre-commit>=3.0.0,<4.0.0

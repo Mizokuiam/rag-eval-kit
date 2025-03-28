@@ -1,0 +1,5 @@
+{"question": "What is the capital of France?", "ground_truth_context_ids": ["doc1"], "ground_truth_answer": "The capital of France is Paris."}
+{"question": "Tell me about the Eiffel Tower.", "ground_truth_context_ids": ["doc2"], "ground_truth_answer": "The Eiffel Tower is a famous landmark located in Paris, France."}
+{"question": "How do plants make energy?", "ground_truth_context_ids": ["doc3"], "ground_truth_answer": "Plants use a process called photosynthesis to convert light into energy."}
+{"question": "What currency is used in France?", "ground_truth_context_ids": ["doc4"], "ground_truth_answer": "The Euro is the currency used in France."}
+{"question": "What is photosynthesis?", "ground_truth_context_ids": ["doc3"], "ground_truth_answer": "Photosynthesis is the process plants use to convert light into energy."}
