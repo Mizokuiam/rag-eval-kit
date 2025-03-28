@@ -27,11 +27,28 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip' # cache pip dependencies
 
+    - name: Debug - List directory contents
+      run: |
+        ls -la
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
+        
+    - name: Debug - Check sample file content
+      run: |
+        cat sample_dataset.jsonl
+        
+    - name: Debug - Check package structure
+      run: |
+        ls -la rag_eval_kit/
+
+    # Install the package in development mode to allow importing
+    - name: Install package in development mode
+      run: |
+        pip install -e .
 
     - name: Lint with flake8
       run: |
@@ -52,6 +69,11 @@ jobs:
     #   run: |
     #     pytest
 
+    - name: Debug - Python import paths
+      run: |
+        python -c "import sys; print(sys.path)"
+        python -c "try: import rag_eval_kit; print('rag_eval_kit successfully imported'); except ImportError as e: print(f'Import error: {e}')"
+        
     - name: Run evaluate script as smoke test
       run: |
         python evaluate.py sample_dataset.jsonl
