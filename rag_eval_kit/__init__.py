@@ -11,7 +11,7 @@ from .core import (
     evaluate_relevancy,
     run_evaluation,
     DEFAULT_FAITHFULNESS_PROMPT_TEMPLATE,
-    DEFAULT_RELEVANCY_PROMPT_TEMPLATE
+    DEFAULT_RELEVANCY_PROMPT_TEMPLATE,
 )
 
 __version__ = "0.1.0"
@@ -23,5 +23,5 @@ __all__ = [
     "run_evaluation",
     "DEFAULT_FAITHFULNESS_PROMPT_TEMPLATE",
     "DEFAULT_RELEVANCY_PROMPT_TEMPLATE",
-    "__version__"
+    "__version__",
 ]

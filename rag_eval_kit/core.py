@@ -43,36 +43,44 @@ Answer ONLY with 'RELEVANT' or 'IRRELEVANT'.
 
 # --- Type Definitions ---
 
+
 class RetrievalResult(TypedDict):
     retrieved_ids: List[str]
-    retrieved_content: List[str] # Content corresponding to IDs
+    retrieved_content: List[str]  # Content corresponding to IDs
+
 
 class EvaluationResult(TypedDict):
     context_precision: float
     context_recall: float
-    faithfulness: Optional[float] # Use Optional for cases where generation fails
-    answer_relevancy: Optional[float] # Use Optional for cases where generation fails
+    faithfulness: Optional[float]  # Use Optional for cases where generation fails
+    answer_relevancy: Optional[float]  # Use Optional for cases where generation fails
+
 
 # Define types for the user-provided functions
 RetrieverFunc = Callable[[str], RetrievalResult]
-GeneratorFunc = Callable[[str, List[str]], str] # Takes question, list of context strings
-LLMClientFunc = Callable[[str], str] # Takes prompt string, returns LLM response string
+GeneratorFunc = Callable[
+    [str, List[str]], str
+]  # Takes question, list of context strings
+LLMClientFunc = Callable[[str], str]  # Takes prompt string, returns LLM response string
 
 # --- Metric Calculations ---
 
-def calculate_retrieval_metrics(retrieved_ids: List[str], ground_truth_ids: List[str]) -> Tuple[float, float]:
+
+def calculate_retrieval_metrics(
+    retrieved_ids: List[str], ground_truth_ids: List[str]
+) -> Tuple[float, float]:
     """Calculates Context Precision and Recall."""
     retrieved_set = set(retrieved_ids)
     ground_truth_set = set(ground_truth_ids)
 
     if not retrieved_set and not ground_truth_set:
-        return 1.0, 1.0 # Both empty, perfect match conceptually
+        return 1.0, 1.0  # Both empty, perfect match conceptually
     if not retrieved_set:
-        return 0.0, 0.0 # Nothing retrieved, precision=0, recall can't be >0
+        return 0.0, 0.0  # Nothing retrieved, precision=0, recall can't be >0
     if not ground_truth_set:
-         # Nothing needed, precision is debatable, let's say 1.0 if nothing retrieved, else 0.0?
-         # Or maybe it depends? Let's default to 0.0 precision if GT is empty but we retrieved something.
-         # Recall is 1.0 as we didn't miss any required documents.
+        # Nothing needed, precision is debatable, let's say 1.0 if nothing retrieved, else 0.0?
+        # Or maybe it depends? Let's default to 0.0 precision if GT is empty but we retrieved something.
+        # Recall is 1.0 as we didn't miss any required documents.
         return 0.0 if retrieved_set else 1.0, 1.0
 
     intersection = retrieved_set.intersection(ground_truth_set)
@@ -82,15 +90,16 @@ def calculate_retrieval_metrics(retrieved_ids: List[str], ground_truth_ids: List
 
     return precision, recall
 
+
 def evaluate_faithfulness(
     question: str,
     retrieved_context: List[str],
     generated_answer: str,
     llm_client: LLMClientFunc,
-    prompt_template: str = DEFAULT_FAITHFULNESS_PROMPT_TEMPLATE
+    prompt_template: str = DEFAULT_FAITHFULNESS_PROMPT_TEMPLATE,
 ) -> Optional[float]:
     """Evaluates Faithfulness using LLM-as-a-judge."""
-    if not generated_answer: # Handle cases where generation failed
+    if not generated_answer:  # Handle cases where generation failed
         return None
     context_str = "\n---\n".join(retrieved_context)
     prompt = prompt_template.format(context=context_str, answer=generated_answer)
@@ -104,19 +113,20 @@ def evaluate_faithfulness(
             return 1.0
         else:
             print(f"Warning: Faithfulness LLM response ambiguous: '{response}'")
-            return None # Ambiguous response
+            return None  # Ambiguous response
     except Exception as e:
         print(f"Error during Faithfulness LLM call: {e}")
         return None
+
 
 def evaluate_relevancy(
     question: str,
     generated_answer: str,
     llm_client: LLMClientFunc,
-    prompt_template: str = DEFAULT_RELEVANCY_PROMPT_TEMPLATE
+    prompt_template: str = DEFAULT_RELEVANCY_PROMPT_TEMPLATE,
 ) -> Optional[float]:
     """Evaluates Answer Relevancy using LLM-as-a-judge."""
-    if not generated_answer: # Handle cases where generation failed
+    if not generated_answer:  # Handle cases where generation failed
         return None
     prompt = prompt_template.format(question=question, answer=generated_answer)
     try:
@@ -129,12 +139,14 @@ def evaluate_relevancy(
             return 1.0
         else:
             print(f"Warning: Relevancy LLM response ambiguous: '{response}'")
-            return None # Ambiguous response
+            return None  # Ambiguous response
     except Exception as e:
         print(f"Error during Relevancy LLM call: {e}")
         return None
 
+
 # --- Main Evaluation Loop ---
+
 
 def run_evaluation(
     dataset_path: str,
@@ -162,12 +174,12 @@ def run_evaluation(
     total_items = 0
 
     try:
-        with open(dataset_path, 'r', encoding='utf-8') as f:
+        with open(dataset_path, "r", encoding="utf-8") as f:
             for i, line in enumerate(f):
                 try:
                     data_item = json.loads(line.strip())
-                    question = data_item['question']
-                    ground_truth_ids = data_item['ground_truth_context_ids']
+                    question = data_item["question"]
+                    ground_truth_ids = data_item["ground_truth_context_ids"]
                     # ground_truth_answer = data_item['ground_truth_answer'] # Not used in default metrics yet
 
                     print(f"\nProcessing item {i+1}: {question[:80]}...")
@@ -176,8 +188,8 @@ def run_evaluation(
                     # 1. Retrieval Step
                     try:
                         retrieval_output = retriever_func(question)
-                        retrieved_ids = retrieval_output['retrieved_ids']
-                        retrieved_content = retrieval_output['retrieved_content']
+                        retrieved_ids = retrieval_output["retrieved_ids"]
+                        retrieved_content = retrieval_output["retrieved_content"]
                         print(f"  Retrieved {len(retrieved_ids)} docs: {retrieved_ids}")
                     except Exception as e:
                         print(f"  Error during retrieval: {e}")
@@ -187,11 +199,15 @@ def run_evaluation(
                         # Decide if you want to proceed without context or skip
 
                     # Calculate Retrieval Metrics
-                    precision, recall = calculate_retrieval_metrics(retrieved_ids, ground_truth_ids)
-                    print(f"  Context Precision: {precision:.4f}, Context Recall: {recall:.4f}")
+                    precision, recall = calculate_retrieval_metrics(
+                        retrieved_ids, ground_truth_ids
+                    )
+                    print(
+                        f"  Context Precision: {precision:.4f}, Context Recall: {recall:.4f}"
+                    )
 
                     # 2. Generation Step
-                    generated_answer = "" # Default empty if generation fails
+                    generated_answer = ""  # Default empty if generation fails
                     try:
                         generated_answer = generator_func(question, retrieved_content)
                         print(f"  Generated Answer: {generated_answer[:100]}...")
@@ -199,23 +215,30 @@ def run_evaluation(
                         print(f"  Error during generation: {e}")
                         # Generation failed, metrics depending on it will be None
 
-
                     # Calculate Generation Metrics (using LLM-as-a-judge)
-                    faithfulness_score = evaluate_faithfulness(question, retrieved_content, generated_answer, llm_client_func)
-                    relevancy_score = evaluate_relevancy(question, generated_answer, llm_client_func)
-                    print(f"  Faithfulness: {faithfulness_score}, Answer Relevancy: {relevancy_score}")
+                    faithfulness_score = evaluate_faithfulness(
+                        question, retrieved_content, generated_answer, llm_client_func
+                    )
+                    relevancy_score = evaluate_relevancy(
+                        question, generated_answer, llm_client_func
+                    )
+                    print(
+                        f"  Faithfulness: {faithfulness_score}, Answer Relevancy: {relevancy_score}"
+                    )
 
-                    results.append({
-                        "context_precision": precision,
-                        "context_recall": recall,
-                        "faithfulness": faithfulness_score,
-                        "answer_relevancy": relevancy_score
-                    })
+                    results.append(
+                        {
+                            "context_precision": precision,
+                            "context_recall": recall,
+                            "faithfulness": faithfulness_score,
+                            "answer_relevancy": relevancy_score,
+                        }
+                    )
 
                 except json.JSONDecodeError as e:
                     print(f"Skipping invalid JSON line {i+1}: {e}")
                 except KeyError as e:
-                     print(f"Skipping line {i+1} due to missing key: {e}")
+                    print(f"Skipping line {i+1} due to missing key: {e}")
                 except Exception as e:
                     print(f"Unexpected error processing line {i+1}: {e}")
 
@@ -236,10 +259,10 @@ def run_evaluation(
         valid_scores = [s for s in scores if s is not None]
         return statistics.mean(valid_scores) if valid_scores else 0.0
 
-    avg_precision = robust_mean([r['context_precision'] for r in results])
-    avg_recall = robust_mean([r['context_recall'] for r in results])
-    avg_faithfulness = robust_mean([r['faithfulness'] for r in results])
-    avg_relevancy = robust_mean([r['answer_relevancy'] for r in results])
+    avg_precision = robust_mean([r["context_precision"] for r in results])
+    avg_recall = robust_mean([r["context_recall"] for r in results])
+    avg_faithfulness = robust_mean([r["faithfulness"] for r in results])
+    avg_relevancy = robust_mean([r["answer_relevancy"] for r in results])
 
     summary = {
         "total_items_processed": total_items,
